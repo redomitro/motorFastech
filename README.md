@@ -1,2 +1,1 @@
-# motorFastech
-EPICS support for FASTech motors
+EPICS support for FASTech motors. WIP

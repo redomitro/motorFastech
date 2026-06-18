@@ -12,17 +12,17 @@ include $(TOP)/configure/CONFIG
 #==================================================
 # build a support library
 
-LIBRARY_IOC += Fastech
+LIBRARY_IOC += fastech
 
 # xxxRecord.h will be created from xxxRecord.dbd
 #DBDINC += xxxRecord
-# install Fastech.dbd into <top>/dbd
-DBD += Fastech.dbd
+# install fastech.dbd into <top>/dbd
+DBD += fastech.dbd
 
 # specify all source files to be compiled and added to the library
-#Fastech_SRCS += xxx
+#fastech_SRCS += xxx
 
-Fastech_LIBS += $(EPICS_BASE_IOC_LIBS)
+fastech_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #===========================
 

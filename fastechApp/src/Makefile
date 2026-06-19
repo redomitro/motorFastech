@@ -22,6 +22,7 @@ DBD += fastech.dbd
 # specify all source files to be compiled and added to the library
 #fastech_SRCS += xxx
 
+fastech_LIBS += motor asyn
 fastech_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #===========================

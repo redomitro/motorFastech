@@ -38,7 +38,7 @@ EzS2PEController::EzS2PEController(const char *portName, const char *EzS2PEPortN
   for (axis=0; axis<numAxes; axis++) {
     pAxis = new EzS2PEAxis(this, axis);
   }
-  
+
   syncCounter = 0; //start the idempotence counter
 
   startPoller(movingPollPeriod, idlePollPeriod, 2);
@@ -102,16 +102,18 @@ EzS2PEAxis* EzS2PEController::getAxis(int axisNo)
 // These are the EzS2PEAxis methods
 
 /** Creates a new EzS2PEAxis object.
-  * \param[in] pC Pointer to the EzS2PEController to which this axis belongs. 
+  * \param[in] pC Pointer to the EzS2PEController to which this axis belongs.
   * \param[in] axisNo Index number of this axis, range 0 to pC->numAxes_-1.
-  * 
+  *
   * Initializes register numbers, etc.
   */
 
 EzS2PEAxis::EzS2PEAxis(EzS2PEController *pC, int axisNo)
   : asynMotorAxis(pC, axisNo),
     pC_(pC)
-{  
+{
+bool power=true;
+servoPower(power);
 }
 
 /** Reports on status of the axis
@@ -132,23 +134,59 @@ void EzS2PEAxis::report(FILE *fp, int level)
   asynMotorAxis::report(fp, level);
 }
 
-/* Set acceleration for driver. Currently commented out because motor
- * expects integer acceleration in pps and asynMotor calls for float
- *
+// Set acceleration for driver. Motor record sends acceleration in steps/sec^2;
+// controller expects accel time in msec.
+/* Currently unused
+asynStatus EzS2PEAxis::sendAccel(double accel64, double velo64){
 
-asynStatus EzS2PEAxis::sendAccel(double accel64){
   asynStatus status;
-  float accel32 = (float)accel64;
-  //set forward acceleration
-  pC->syncCounter++;
-  }
+  pC_->syncCounter++;
+
+  int accel = NINT(fabs(velo64/accel64));
+  unsigned char param = 0x03;
+
+  unsigned char boiler[] = {HEADER, 8, pC_->syncCounter, 0x00, SET_PARAMETER, param};
+  unsigned char buffer[256];
+
+  //build outstring
+  memcpy(buffer, boiler, sizeof(boiler));
+  memcpy(buffer+sizeof(boiler), &accel, sizeof(int));
+
+  //write outstring
+  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
+  status = pC_->writeReadController();
+
+  return status;
+}
 */
 
+asynStatus EzS2PEAxis::servoPower(bool power){
+  //set motor power
+  //test this in a dummy program
+
+	asynStatus status;
+	pC_->syncCounter++;
+
+	unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, STOP, (unsigned char)power};
+	unsigned char buffer[256];
+
+  //build the outstring
+  unsigned char* ptr = buffer;
+
+  memcpy(ptr, boiler, sizeof(boiler)); //message header
+  ptr += sizeof(boiler);
+
+	//write the outstring to controller
+  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
+  status = pC_->writeReadController();
+
+  return status;
+}
 
 asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, double maxVelocity, double acceleraton){
 	//move to absolute position (RVAL) or relative position (TWF/TWR)
-	
-  asynStatus status;
+
+	asynStatus status;
   pC_->syncCounter++;
 
   unsigned char boiler[]={HEADER, 11, pC_->syncCounter, 0x00, 0x00}; //boilerplate string
@@ -161,14 +199,14 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
   }
 
   int pos = NINT(position);
-  int vel = NINT(maxVelocity);
+  int vel = NINT(fabs(maxVelocity));
 
   //build the outstring
   unsigned char* ptr = buffer;
-  
+
   memcpy(ptr, boiler, sizeof(boiler)); //message header
   ptr += sizeof(boiler);
-  
+
   memcpy(ptr, &pos, sizeof(int)); //position
   ptr += sizeof(int);
 
@@ -178,38 +216,38 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
 	//write the outstring to controller
   memcpy(&pC_->outString_, buffer, 2+buffer[1]);
   status = pC_->writeReadController();
-  
+
   return status;
 }
 
 asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, double acceleration){
 	//jogging motion
-	
-	asynStatus status;
-	pC_->syncCounter++;
 
-	unsigned char boiler[]={HEADER, 8, pC_->syncCounter, 0x00, JOG};
-	unsigned char buffer[256];
+  asynStatus status;
+  pC_->syncCounter++;
 
-	int vel = NINT(abs(maxVelocity));
+  unsigned char boiler[]={HEADER, 8, pC_->syncCounter, 0x00, JOG};
+  unsigned char buffer[256];
+
+  int vel = NINT(abs(maxVelocity));
 
   //build the outstring
   unsigned char* ptr = buffer;
- 
+
   memcpy(ptr, boiler, sizeof(boiler)); //message header
   ptr += sizeof(boiler);
-  
+
   memcpy(ptr, &vel, sizeof(int)); //speed
   ptr += sizeof(int);
 
-	if(maxVelocity > 0){ //direction
-		*ptr = 1; //forward jog
-	} else {
-		*ptr = 0; //reverse jog
-	}
-	ptr++;
+  if(maxVelocity > 0){ //direction
+    *ptr = 1; //forward jog
+  } else {
+    *ptr = 0; //reverse jog
+  }
+  ptr++;
 
-	//write the outstring to controller
+  //write the outstring to controller
   memcpy(&pC_->outString_, buffer, 2+buffer[1]);
   status = pC_->writeReadController();
 
@@ -222,25 +260,25 @@ asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double accel
 
 		todo: implement custom speed
 	*/
-	
-	asynStatus status;
-	pC_->syncCounter++;
 
-	unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, ORIGIN};
-	unsigned char buffer[256];
+  asynStatus status;
+  pC_->syncCounter++;
+
+  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, ORIGIN};
+  unsigned char buffer[256];
 
   //build the outstring
   unsigned char* ptr = buffer;
- 
+
   memcpy(ptr, boiler, sizeof(boiler)); //message header
   ptr += sizeof(boiler);
 
   /*
   memcpy(ptr, &vel, sizeof(int)); //speed
   ptr += sizeof(int);
-	*/
-	
-	//write the outstring to controller
+  */
+
+  //write the outstring to controller
   memcpy(&pC_->outString_, buffer, 2+buffer[1]);
   status = pC_->writeReadController();
 
@@ -258,18 +296,81 @@ asynStatus EzS2PEAxis::stop(double acceleration){
 
   //build the outstring
   unsigned char* ptr = buffer;
- 
+
   memcpy(ptr, boiler, sizeof(boiler)); //message header
   ptr += sizeof(boiler);
 
-  /*
-  memcpy(ptr, &vel, sizeof(int)); //speed
-  ptr += sizeof(int);
-	*/
-	
 	//write the outstring to controller
   memcpy(&pC_->outString_, buffer, 2+buffer[1]);
   status = pC_->writeReadController();
 
   return status;
+}
+
+asynStatus EzS2PEAxis::poll(bool *moving){
+
+  //poll the motor
+
+  int flag; //motor returns 32 status flags packed into an int32
+  int bit; //to store a status flag bit
+  int position; //motor returns position as int32 in steps
+  asynStatus comStatus;
+
+  // Do the poll - one command to the motor and then read everything from inString
+  pC_->syncCounter++;
+
+  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, POLL};
+
+  memcpy(&pC_->outString_, boiler, sizeof(boiler));
+  comStatus = pC_->writeReadController();
+
+  unsigned char buffer[256];
+  memcpy(buffer, &pC_->inString_, 2+pC_->inString_[1]); //copy inString to buffer
+
+  memcpy(&flag, buffer[9], sizeof(int)); //read the status flag integer
+
+  bit = (flag >> 19)%2;
+  setIntegerParam(pC_->motorStatusDone_, bit);
+
+  bit = (flag >> 20)%2;
+  setIntegerParam(pC_->motorStatusPowerOn_, bit);
+
+  bit = (flag >> 23)%2;
+  setIntegerParam(pC_->motorStatusAtHome_, bit);
+
+  bit = (flag >> 27)%2;
+  *moving = bit ? true : false;
+
+  memcpy(&position, buffer[17], sizeof(int)); //read position
+  setDoubleParam(pC_->motorPosition_, (double)position); //write position to motor record readback
+
+  return comStatus ? asynError : asynSuccess;
+}
+
+//todo: set SW move limits
+
+/** Code for iocsh registration */
+static const iocshArg EzS2PECreateControllerArg0 = {"Port name", iocshArgString};
+static const iocshArg EzS2PECreateControllerArg1 = {"EziS2-PE port name", iocshArgString};
+static const iocshArg EzS2PECreateControllerArg2 = {"Number of axes", iocshArgInt};
+static const iocshArg EzS2PECreateControllerArg3 = {"Moving poll period (ms)", iocshArgInt};
+static const iocshArg EzS2PECreateControllerArg4 = {"Idle poll period (ms)", iocshArgInt};
+static const iocshArg * const EzS2PECreateControllerArgs[] = {&EzS2PECreateControllerArg0,
+                                                             &EzS2PECreateControllerArg1,
+                                                             &EzS2PECreateControllerArg2,
+                                                             &EzS2PECreateControllerArg3,
+                                                             &EzS2PECreateControllerArg4};
+static const iocshFuncDef EzS2PECreateControllerDef = {"EzS2PECreateController", 5, EzS2PECreateControllerArgs};
+static void EzS2PECreateContollerCallFunc(const iocshArgBuf *args)
+{
+  EzS2PECreateController(args[0].sval, args[1].sval, args[2].ival, args[3].ival, args[4].ival);
+}
+
+static void EzS2PERegister(void)
+{
+  iocshRegister(&EzS2PECreateControllerDef, EzS2PECreateContollerCallFunc);
+}
+
+extern "C" {
+epicsExportRegistrar(EzS2PERegister);
 }

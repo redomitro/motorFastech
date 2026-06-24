@@ -5,11 +5,13 @@
 
 #define HEADER 				0xAA
 #define SET_PARAMETER 0x12
+#define SERVO_ENABLE  0x2A
 #define STOP 					0x31
 #define ORIGIN 				0x33
 #define MOVE 					0x34
 #define TWEAK 				0x35
 #define JOG 					0x37
+#define POLL          0x43
 
 class epicsShareClass EzS2PEAxis : public asynMotorAxis
 {
@@ -29,7 +31,7 @@ public:
 
 private:
     EzS2PEController *pC_;	/**< Pointer to the asynMotorController to which this axis belongs.
-                  			 *     Abbreviated because it is used very frequently */
+                             *   Abbreviated because it is used very frequently */
     asynStatus sendAccel(double accel64);
     asynStatus servoPower(bool power);
 

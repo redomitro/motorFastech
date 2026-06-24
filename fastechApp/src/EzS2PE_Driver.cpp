@@ -164,11 +164,11 @@ asynStatus EzS2PEAxis::servoPower(bool power){
   //set motor power
   //test this in a dummy program
 
-	asynStatus status;
-	pC_->syncCounter++;
+  asynStatus status;
+  pC_->syncCounter++;
 
-	unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, STOP, (unsigned char)power};
-	unsigned char buffer[256];
+  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, STOP, (unsigned char)power};
+  unsigned char buffer[256];
 
   //build the outstring
   unsigned char* ptr = buffer;
@@ -176,7 +176,7 @@ asynStatus EzS2PEAxis::servoPower(bool power){
   memcpy(ptr, boiler, sizeof(boiler)); //message header
   ptr += sizeof(boiler);
 
-	//write the outstring to controller
+  //write the outstring to controller
   memcpy(&pC_->outString_, buffer, 2+buffer[1]);
   status = pC_->writeReadController();
 
@@ -184,9 +184,9 @@ asynStatus EzS2PEAxis::servoPower(bool power){
 }
 
 asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, double maxVelocity, double acceleraton){
-	//move to absolute position (RVAL) or relative position (TWF/TWR)
+  //move to absolute position (RVAL) or relative position (TWF/TWR)
 
-	asynStatus status;
+  asynStatus status;
   pC_->syncCounter++;
 
   unsigned char boiler[]={HEADER, 11, pC_->syncCounter, 0x00, 0x00}; //boilerplate string
@@ -213,7 +213,7 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
   memcpy(ptr, &vel, sizeof(int)); //speed
   ptr += sizeof(int);
 
-	//write the outstring to controller
+  //write the outstring to controller
   memcpy(&pC_->outString_, buffer, 2+buffer[1]);
   status = pC_->writeReadController();
 
@@ -221,7 +221,7 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
 }
 
 asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, double acceleration){
-	//jogging motion
+  //jogging motion
 
   asynStatus status;
   pC_->syncCounter++;
@@ -255,11 +255,11 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
 }
 
 asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double acceleration, int forwards){
-	/*	go to hardware home switch - motor will move at 5000 pps by default
-		and forwards until it finds the limit or the origin, if it finds the limit first it will go back
+  /*  go to hardware home switch - motor will move at 5000 pps by default
+      and forwards until it finds the limit or the origin, if it finds the limit first it will go back
 
-		todo: implement custom speed
-	*/
+      todo: implement custom speed
+  */
 
   asynStatus status;
   pC_->syncCounter++;
@@ -286,13 +286,13 @@ asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double accel
 }
 
 asynStatus EzS2PEAxis::stop(double acceleration){
-	//stop the motor
+  //stop the motor
 
-	asynStatus status;
-	pC_->syncCounter++;
+  asynStatus status;
+  pC_->syncCounter++;
 
-	unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, STOP};
-	unsigned char buffer[256];
+  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, STOP};
+  unsigned char buffer[256];
 
   //build the outstring
   unsigned char* ptr = buffer;
@@ -300,7 +300,7 @@ asynStatus EzS2PEAxis::stop(double acceleration){
   memcpy(ptr, boiler, sizeof(boiler)); //message header
   ptr += sizeof(boiler);
 
-	//write the outstring to controller
+  //write the outstring to controller
   memcpy(&pC_->outString_, buffer, 2+buffer[1]);
   status = pC_->writeReadController();
 

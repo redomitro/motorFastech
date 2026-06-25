@@ -12,15 +12,19 @@ include $(TOP)/configure/CONFIG
 #==================================================
 # build a support library
 
-LIBRARY_IOC += fastech
+LIBRARY_IOC += fastechMotor
 
 # xxxRecord.h will be created from xxxRecord.dbd
 #DBDINC += xxxRecord
 # install fastech.dbd into <top>/dbd
-DBD += fastech.dbd
+DBD += devFastechMotor.dbd
+
+INC += EzS2PEDriver.h
 
 # specify all source files to be compiled and added to the library
 #fastech_SRCS += xxx
+
+fastech
 
 fastech_LIBS += motor asyn
 fastech_LIBS += $(EPICS_BASE_IOC_LIBS)

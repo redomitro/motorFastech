@@ -112,8 +112,7 @@ EzS2PEAxis::EzS2PEAxis(EzS2PEController *pC, int axisNo)
   : asynMotorAxis(pC, axisNo),
     pC_(pC)
 {
-bool power=true;
-servoPower(power);
+  servoPower(true);
 }
 
 /** Reports on status of the axis
@@ -167,7 +166,7 @@ asynStatus EzS2PEAxis::servoPower(bool power){
   asynStatus status;
   pC_->syncCounter++;
 
-  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, STOP, (unsigned char)power};
+  unsigned char boiler[]={HEADER, 4, pC_->syncCounter, 0x00, SERVO_ENABLE, (unsigned char)power};
   unsigned char buffer[256];
 
   //build the outstring

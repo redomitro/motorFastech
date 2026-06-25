@@ -74,7 +74,6 @@ extern "C" int EzS2PECreateController(const char *portName, const char *EzS2PEPo
 void EzS2PEController::report(FILE *fp, int level)
 {
   fprintf(fp, "EziS2-PE motor driver %s, numAxes=%d, moving poll period=%f, idle poll period=%f\n", 
-  (double min_velocity, double max_velocity, double acceleration);
   this->portName, numAxes_, movingPollPeriod_, idlePollPeriod_);
 
   // Call the base class method
@@ -112,7 +111,7 @@ EzS2PEAxis::EzS2PEAxis(EzS2PEController *pC, int axisNo)
   : asynMotorAxis(pC, axisNo),
     pC_(pC)
 {
-  servoPower(true);
+  servoPower(true); //turn power on when axis is initialised
 }
 
 /** Reports on status of the axis
@@ -161,7 +160,6 @@ asynStatus EzS2PEAxis::sendAccel(double accel64, double velo64){
 
 asynStatus EzS2PEAxis::servoPower(bool power){
   //set motor power
-  //test this in a dummy program
 
   asynStatus status;
   pC_->syncCounter++;
@@ -326,7 +324,7 @@ asynStatus EzS2PEAxis::poll(bool *moving){
   unsigned char buffer[256];
   memcpy(buffer, &pC_->inString_, 2+pC_->inString_[1]); //copy inString to buffer
 
-  memcpy(&flag, buffer[9], sizeof(int)); //read the status flag integer
+  memcpy(&flag, buffer+9, sizeof(int)); //read the status flag integer
 
   bit = (flag >> 19)%2;
   setIntegerParam(pC_->motorStatusDone_, bit);
@@ -340,7 +338,7 @@ asynStatus EzS2PEAxis::poll(bool *moving){
   bit = (flag >> 27)%2;
   *moving = bit ? true : false;
 
-  memcpy(&position, buffer[17], sizeof(int)); //read position
+  memcpy(&position, buffer+17, sizeof(int)); //read position
   setDoubleParam(pC_->motorPosition_, (double)position); //write position to motor record readback
 
   return comStatus ? asynError : asynSuccess;

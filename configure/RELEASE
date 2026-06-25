@@ -28,7 +28,7 @@
 # Variables and paths to dependent modules:
 #MODULES = /path/to/modules
 #MYMODULE = $(MODULES)/my-module
-ASYN = ${EPICS_ROOT}/support/asyn-R4-44-2
+ASYN = ${SUPPORT}/asyn-R4-44-2
 MOTOR = ${SUPPORT}/motor-R7-3-1
 
 # If using the sequencer, point SNCSEQ at its top directory:

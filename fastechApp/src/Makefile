@@ -17,17 +17,16 @@ LIBRARY_IOC += fastechMotor
 # xxxRecord.h will be created from xxxRecord.dbd
 #DBDINC += xxxRecord
 # install fastech.dbd into <top>/dbd
-DBD += devFastechMotor.dbd
+DBD += devEzS2PE.dbd
 
-INC += EzS2PEDriver.h
+INC += EzS2PE_Driver.h
 
 # specify all source files to be compiled and added to the library
 #fastech_SRCS += xxx
+fastechMotor_SRCS += EzS2PE_Driver.cpp
 
-fastech
-
-fastech_LIBS += motor asyn
-fastech_LIBS += $(EPICS_BASE_IOC_LIBS)
+fastechMotor_LIBS += motor asyn
+fastechMotor_LIBS += $(EPICS_BASE_IOC_LIBS)
 
 #===========================
 

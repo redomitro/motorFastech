@@ -24,10 +24,10 @@ public:
     asynStatus home(double min_velocity, double max_velocity, double acceleration, int forwards);
     asynStatus stop(double acceleration);
     asynStatus poll(bool *moving);
-    asynStatus setPosition(double position);
-    asynStatus setClosedLoop(bool closedLoop);
-    asynStatus setHighLimit(double high_limit);
-    asynStatus setLowLimit(double low_limit);
+//    asynStatus setPosition(double position);
+//    asynStatus setClosedLoop(bool closedLoop);
+//    asynStatus setHighLimit(double high_limit);
+//    asynStatus setLowLimit(double low_limit);
 
 private:
     EzS2PEController *pC_;  /**< Pointer to the asynMotorController to which this axis belongs.

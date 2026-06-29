@@ -15,8 +15,8 @@ cd "${TOP}"
 dbLoadDatabase "dbd/fastech.dbd"
 fastech_registerRecordDeviceDriver pdbbase
 
-drvAsynIPPortConfigure("L0", "192.168.0.204:3001 UDP", 0, 0, 0)
-EzS2PECreateController("motorExit", "L0", 1, 2, 1000, 0)
+drvAsynIPPortConfigure("L0", "192.168.0.204:3001 UDP", 0, 0, 1)
+EzS2PECreateController("motorExit", "L0", 1, 2, 5000, 0)
 
 ## Load record instances
 dbLoadRecords("db/motor.db","SYS=EXIT, SUB=zpos")

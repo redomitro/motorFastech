@@ -1,3 +1,16 @@
+/*
+FILENAME... EzS2PE_Driver.cpp
+USAGE...    Motor driver support for the FASTech Ezi-Servo 2 Plus-E controller.
+
+Rea Domitrović
+Based on the ACR driver of Mark Rivers.
+
+Thanks to Mark Rivers and Torsten Bögershausen for debugging help.
+
+Last modification: 2026-06-29
+*/
+
+
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -98,6 +111,36 @@ EzS2PEAxis* EzS2PEController::getAxis(int axisNo)
   return static_cast<EzS2PEAxis*>(asynMotorController::getAxis(axisNo));
 }
 
+asynStatus EzS2PEController::writeReadController(const char *output, char *input, size_t maxChars, size_t *nread, double timeout)
+{
+  size_t nwrite;
+  asynStatus status;
+  int eomReason;
+  // const char *functionName="writeReadController";
+
+  status = pasynOctetSyncIO->writeRead(pasynUserController_, output,
+                                       2+output[1], input, maxChars, timeout,
+                                       &nwrite, nread, &eomReason);
+  // override writeReadController to allow fixed-length binary data instead of ASCII-compatible strings
+  return status;
+}
+
+asynStatus EzS2PEController::writeReadFrame(unsigned char length, unsigned char frameType, unsigned char *payload)
+{
+  asynStatus status;
+  syncCounter++;
+  size_t nread;
+  
+  unsigned char boiler[]={HEADER, 3+length, syncCounter, 0x00, frameType};
+  memcpy(outString_, boiler, sizeof(boiler));
+  if(length){
+    memcpy(outString_+HEAD_LENGTH, payload, sizeof(payload));
+  }
+
+  writeReadController(outString_, inString_, sizeof(inString_), &nread, DEFAULT_CONTROLLER_TIMEOUT);
+  return status;
+}
+
 // These are the EzS2PEAxis methods
 
 /** Creates a new EzS2PEAxis object.
@@ -162,20 +205,10 @@ asynStatus EzS2PEAxis::servoPower(bool power){
   //set motor power
 
   asynStatus status;
-  pC_->syncCounter++;
-
-  unsigned char boiler[]={HEADER, 4, pC_->syncCounter, 0x00, SERVO_ENABLE, (unsigned char)power};
-  unsigned char buffer[256];
-
-  //build the outstring
-  unsigned char* ptr = buffer;
-
-  memcpy(ptr, boiler, sizeof(boiler)); //message header
-  ptr += sizeof(boiler);
-
-  //write the outstring to controller
-  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
-  status = pC_->writeReadController();
+  unsigned char length = 1;
+  unsigned char buffer[length] = {(unsigned char)power};
+  
+  status = pC_->writeReadFrame(length, SERVO_ENABLE, buffer);
 
   return status;
 }
@@ -184,25 +217,14 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
   //move to absolute position (RVAL) or relative position (TWF/TWR)
 
   asynStatus status;
-  pC_->syncCounter++;
-
-  unsigned char boiler[]={HEADER, 11, pC_->syncCounter, 0x00, 0x00}; //boilerplate string
-  unsigned char buffer[256]; //placeholder for outstring
-
-  if(relative){
-    boiler[4] = TWEAK;
-  } else {
-    boiler[4] = MOVE;
-  }
-
+  unsigned char length = 8;
+  unsigned char buffer[length]; //placeholder for outstring
+  
   int pos = NINT(position);
   int vel = NINT(fabs(maxVelocity));
 
   //build the outstring
   unsigned char* ptr = buffer;
-
-  memcpy(ptr, boiler, sizeof(boiler)); //message header
-  ptr += sizeof(boiler);
 
   memcpy(ptr, &pos, sizeof(int)); //position
   ptr += sizeof(int);
@@ -210,9 +232,11 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
   memcpy(ptr, &vel, sizeof(int)); //speed
   ptr += sizeof(int);
 
-  //write the outstring to controller
-  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
-  status = pC_->writeReadController();
+  if(relative){
+    status = pC_->writeReadFrame(length, TWEAK, buffer);
+  } else {
+    status = pC_->writeReadFrame(length, MOVE, buffer);
+  }
 
   return status;
 }
@@ -221,18 +245,14 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
   //jogging motion
 
   asynStatus status;
-  pC_->syncCounter++;
 
-  unsigned char boiler[]={HEADER, 8, pC_->syncCounter, 0x00, JOG};
-  unsigned char buffer[256];
+  unsigned char length = 5;
+  unsigned char buffer[length];
 
   int vel = NINT(abs(maxVelocity));
 
   //build the outstring
   unsigned char* ptr = buffer;
-
-  memcpy(ptr, boiler, sizeof(boiler)); //message header
-  ptr += sizeof(boiler);
 
   memcpy(ptr, &vel, sizeof(int)); //speed
   ptr += sizeof(int);
@@ -244,10 +264,8 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
   }
   ptr++;
 
-  //write the outstring to controller
-  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
-  status = pC_->writeReadController();
-
+  status = pC_->writeReadFrame(length, JOG, buffer);
+  
   return status;
 }
 
@@ -259,26 +277,10 @@ asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double accel
   */
 
   asynStatus status;
-  pC_->syncCounter++;
-
-  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, ORIGIN};
-  unsigned char buffer[256];
-
-  //build the outstring
-  unsigned char* ptr = buffer;
-
-  memcpy(ptr, boiler, sizeof(boiler)); //message header
-  ptr += sizeof(boiler);
-
-  /*
-  memcpy(ptr, &vel, sizeof(int)); //speed
-  ptr += sizeof(int);
-  */
-
-  //write the outstring to controller
-  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
-  status = pC_->writeReadController();
-
+  unsigned char* buffer;
+  
+  status = pC_->writeReadFrame(0, ORIGIN, buffer);
+  
   return status;
 }
 
@@ -286,21 +288,9 @@ asynStatus EzS2PEAxis::stop(double acceleration){
   //stop the motor
 
   asynStatus status;
-  pC_->syncCounter++;
-
-  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, STOP};
-  unsigned char buffer[256];
-
-  //build the outstring
-  unsigned char* ptr = buffer;
-
-  memcpy(ptr, boiler, sizeof(boiler)); //message header
-  ptr += sizeof(boiler);
-
-  //write the outstring to controller
-  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
-  status = pC_->writeReadController();
-
+  unsigned char* buffer;
+  
+  status = pC_->writeReadFrame(0, STOP, buffer);
   return status;
 }
 
@@ -314,12 +304,8 @@ asynStatus EzS2PEAxis::poll(bool *moving){
   asynStatus comStatus;
 
   // Do the poll - one command to the motor and then read everything from inString
-  pC_->syncCounter++;
-
-  unsigned char boiler[]={HEADER, 3, pC_->syncCounter, 0x00, POLL};
-
-  memcpy(&pC_->outString_, boiler, sizeof(boiler));
-  comStatus = pC_->writeReadController();
+  unsigned char* outBuffer;
+  comStatus = pC_->writeReadFrame(0, POLL, outBuffer);
 
   unsigned char buffer[256];
   memcpy(buffer, &pC_->inString_, 2+pC_->inString_[1]); //copy inString to buffer

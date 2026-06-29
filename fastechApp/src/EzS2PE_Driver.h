@@ -2,6 +2,7 @@
 #include "asynMotorAxis.h"
 
 #define NUM_EZS2PE_PARAMS 0
+#define HEAD_LENGTH   5
 
 #define HEADER        0xAA
 #define SET_PARAMETER 0x12
@@ -44,10 +45,14 @@ public:
 
     void report(FILE *fp, int level);
     EzS2PEAxis* getAxis(asynUser *pasynUser);
-    EzS2PEAxis* getAxis(int axisNo);
+    EzS2PEAxis* getAxis(int axisNozz);
+//  asynStatus writeReadController();
+    asynStatus writeReadController(const char *output, char *input, size_t maxChars, size_t *nread, double timeout);
 
 private:
     unsigned char syncCounter;
+    asynStatus writeReadFrame(unsigned char length, unsigned char frameType, unsigned char *payload);
 
 friend class EzS2PEAxis;
 };
+

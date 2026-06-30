@@ -298,7 +298,7 @@ asynStatus EzS2PEAxis::poll(bool *moving){
 
   //poll the motor
 
-  int flag; //motor returns 32 status flags packed into an int32
+  unsigned int flag; //motor returns 32 status flags packed into an int32
   int bit; //to store a status flag bit
   int position; //motor returns position as int32 in steps
   asynStatus comStatus;
@@ -310,23 +310,27 @@ asynStatus EzS2PEAxis::poll(bool *moving){
   unsigned char buffer[256];
   memcpy(buffer, &pC_->inString_, 2+pC_->inString_[1]); //copy inString to buffer
 
-  memcpy(&flag, buffer+9, sizeof(int)); //read the status flag integer
+  memcpy(&position, buffer+22, sizeof(int)); //read position
+  setDoubleParam(pC_->motorPosition_, (double)position); //write position to motor record readback
+  setDoubleParam(pC_->motorEncoderPosition_, (double)position);
+
+  memcpy(&flag, buffer+14, sizeof(int)); //read the status flag integer
 
   bit = (flag >> 19)%2;
   setIntegerParam(pC_->motorStatusDone_, bit);
-
+  *moving = bit ? false : true;
+  
   bit = (flag >> 20)%2;
   setIntegerParam(pC_->motorStatusPowerOn_, bit);
 
   bit = (flag >> 23)%2;
   setIntegerParam(pC_->motorStatusAtHome_, bit);
 
-  bit = (flag >> 27)%2;
-  *moving = bit ? true : false;
+//  bit = (flag >> 27)%2;
+//  *moving = bit ? true : false;
 
-  memcpy(&position, buffer+17, sizeof(int)); //read position
-  setDoubleParam(pC_->motorPosition_, (double)position); //write position to motor record readback
-
+  callParamCallbacks();
+  
   return comStatus ? asynError : asynSuccess;
 }
 

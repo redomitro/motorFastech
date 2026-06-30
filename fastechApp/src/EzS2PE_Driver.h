@@ -25,15 +25,13 @@ public:
     asynStatus home(double min_velocity, double max_velocity, double acceleration, int forwards);
     asynStatus stop(double acceleration);
     asynStatus poll(bool *moving);
-//    asynStatus setPosition(double position);
-//    asynStatus setClosedLoop(bool closedLoop);
-//    asynStatus setHighLimit(double high_limit);
-//    asynStatus setLowLimit(double low_limit);
+//  asynStatus setPosition(double position);
+//  asynStatus setClosedLoop(bool closedLoop);
 
 private:
     EzS2PEController *pC_;  /**< Pointer to the asynMotorController to which this axis belongs.
                              *   Abbreviated because it is used very frequently */
-    asynStatus sendAccel(double accel64);
+    asynStatus setParameter(unsigned char param, int value);
     asynStatus servoPower(bool power);
 
 friend class EzS2PEController;
@@ -46,7 +44,6 @@ public:
     void report(FILE *fp, int level);
     EzS2PEAxis* getAxis(asynUser *pasynUser);
     EzS2PEAxis* getAxis(int axisNozz);
-//  asynStatus writeReadController();
     asynStatus writeReadController(const char *output, char *input, size_t maxChars, size_t *nread, double timeout);
 
 private:

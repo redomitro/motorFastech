@@ -175,34 +175,25 @@ void EzS2PEAxis::report(FILE *fp, int level)
   asynMotorAxis::report(fp, level);
 }
 
-// Set acceleration for driver. Motor record sends acceleration in steps/sec^2;
-// controller expects accel time in msec.
-/* Currently unused
-asynStatus EzS2PEAxis::sendAccel(double accel64, double velo64){
-
+asynStatus EzS2PEAxis::setParameter(unsigned char param, int value){
+  // Set motor parameter in RAM
   asynStatus status;
-  pC_->syncCounter++;
+ 
+  unsigned char length = 5;
+  unsigned char buffer[length];
 
-  int accel = NINT(fabs(velo64/accel64));
-  unsigned char param = 0x03;
+  // Build outstring
+  memcpy(buffer, &param, 1);
+  memcpy(buffer+1, &value, sizeof(int));
 
-  unsigned char boiler[] = {HEADER, 8, pC_->syncCounter, 0x00, SET_PARAMETER, param};
-  unsigned char buffer[256];
-
-  //build outstring
-  memcpy(buffer, boiler, sizeof(boiler));
-  memcpy(buffer+sizeof(boiler), &accel, sizeof(int));
-
-  //write outstring
-  memcpy(&pC_->outString_, buffer, 2+buffer[1]);
-  status = pC_->writeReadController();
+  // Write outstring
+  status = pC_->writeReadFrame(length, SET_PARAMETER, buffer);
 
   return status;
 }
-*/
 
 asynStatus EzS2PEAxis::servoPower(bool power){
-  //set motor power
+  // Set motor power
 
   asynStatus status;
   unsigned char length = 1;
@@ -214,7 +205,7 @@ asynStatus EzS2PEAxis::servoPower(bool power){
 }
 
 asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, double maxVelocity, double acceleraton){
-  //move to absolute position (RVAL) or relative position (TWF/TWR)
+  // Move to absolute position (RVAL) or relative position (TWF/TWR)
 
   asynStatus status;
   unsigned char length = 8;
@@ -223,7 +214,16 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
   int pos = NINT(position);
   int vel = NINT(fabs(maxVelocity));
 
-  //build the outstring
+  /* custom acceleration
+  int accel = NINT(fabs(maxVelocity/acceleration)/1000); //acceleration time in msec
+
+  if(accel!=0){
+    setParameter(0x03, accel);
+    setParameter(0x04, accel); //set accelerations - 
+  }
+  */
+  
+  // Build the outstring
   unsigned char* ptr = buffer;
 
   memcpy(ptr, &pos, sizeof(int)); //position
@@ -242,7 +242,7 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
 }
 
 asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, double acceleration){
-  //jogging motion
+  // Jogging motion
 
   asynStatus status;
 
@@ -251,7 +251,7 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
 
   int vel = NINT(abs(maxVelocity));
 
-  //build the outstring
+  // Build the outstring
   unsigned char* ptr = buffer;
 
   memcpy(ptr, &vel, sizeof(int)); //speed
@@ -270,14 +270,15 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
 }
 
 asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double acceleration, int forwards){
-  /*  go to hardware home switch - motor will move at 5000 pps by default
-      and forwards until it finds the limit or the origin, if it finds the limit first it will go back
-
-      todo: implement custom speed
-  */
+  // Go to hardware home switch at speed HVEL defined in motor record
 
   asynStatus status;
   unsigned char* buffer;
+
+  int vel = NINT(fabs(maxVelocity));
+
+  setParameter(0x0e, vel);
+  setParameter(0x0f, vel/5);
   
   status = pC_->writeReadFrame(0, ORIGIN, buffer);
   
@@ -285,7 +286,7 @@ asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double accel
 }
 
 asynStatus EzS2PEAxis::stop(double acceleration){
-  //stop the motor
+  // Stop the motor
 
   asynStatus status;
   unsigned char* buffer;
@@ -296,7 +297,7 @@ asynStatus EzS2PEAxis::stop(double acceleration){
 
 asynStatus EzS2PEAxis::poll(bool *moving){
 
-  //poll the motor
+  // Poll the motor
 
   unsigned int flag; //motor returns 32 status flags packed into an int32
   int bit; //to store a status flag bit
@@ -326,15 +327,11 @@ asynStatus EzS2PEAxis::poll(bool *moving){
   bit = (flag >> 23)%2;
   setIntegerParam(pC_->motorStatusAtHome_, bit);
 
-//  bit = (flag >> 27)%2;
-//  *moving = bit ? true : false;
-
   callParamCallbacks();
   
   return comStatus ? asynError : asynSuccess;
 }
 
-//todo: set SW move limits
 
 /** Code for iocsh registration */
 static const iocshArg EzS2PECreateControllerArg0 = {"Port name", iocshArgString};

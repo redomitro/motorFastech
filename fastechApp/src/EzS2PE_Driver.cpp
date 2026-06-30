@@ -137,7 +137,7 @@ asynStatus EzS2PEController::writeReadFrame(unsigned char length, unsigned char 
     memcpy(outString_+HEAD_LENGTH, payload, sizeof(payload));
   }
 
-  writeReadController(outString_, inString_, sizeof(inString_), &nread, DEFAULT_CONTROLLER_TIMEOUT);
+  status = writeReadController(outString_, inString_, sizeof(inString_), &nread, DEFAULT_CONTROLLER_TIMEOUT);
   return status;
 }
 

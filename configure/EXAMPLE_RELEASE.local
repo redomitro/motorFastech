@@ -1,0 +1,10 @@
+# Manually define all modules if building outside motor
+
+ASYN =
+MOTOR =
+
+# EPICS_BASE should appear last so earlier modules can override stuff:
+EPICS_BASE =
+
+-include $(TOP)/../RELEASE.local
+-include $(TOP)/../RELEASE.$(EPICS_HOST_ARCH).local

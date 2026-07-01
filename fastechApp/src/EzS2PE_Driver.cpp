@@ -125,13 +125,13 @@ asynStatus EzS2PEController::writeReadController(const char *output, char *input
   return status;
 }
 
-asynStatus EzS2PEController::writeReadFrame(unsigned char length, unsigned char frameType, unsigned char *payload)
+asynStatus EzS2PEController::writeReadFrame(uint8_t length, uint8_t frameType, uint8_t *payload)
 {
   asynStatus status;
   syncCounter++;
   size_t nread;
   
-  unsigned char boiler[]={HEADER, 3+length, syncCounter, 0x00, frameType};
+  uint8_t boiler[]={HEADER, 3+length, syncCounter, 0x00, frameType};
   memcpy(outString_, boiler, sizeof(boiler));
   if(length){
     memcpy(outString_+HEAD_LENGTH, payload, sizeof(payload));
@@ -175,16 +175,16 @@ void EzS2PEAxis::report(FILE *fp, int level)
   asynMotorAxis::report(fp, level);
 }
 
-asynStatus EzS2PEAxis::setParameter(unsigned char param, int value){
+asynStatus EzS2PEAxis::setParameter(uint8_t param, int32_t value){
   // Set motor parameter in RAM
   asynStatus status;
  
-  unsigned char length = 5;
-  unsigned char buffer[length];
+  uint8_t length = 5;
+  uint8_t buffer[length];
 
   // Build outstring
   memcpy(buffer, &param, 1);
-  memcpy(buffer+1, &value, sizeof(int));
+  memcpy(buffer+1, &value, sizeof(int32_t));
 
   // Write outstring
   status = pC_->writeReadFrame(length, SET_PARAMETER, buffer);
@@ -196,26 +196,26 @@ asynStatus EzS2PEAxis::servoPower(bool power){
   // Set motor power
 
   asynStatus status;
-  unsigned char length = 1;
-  unsigned char buffer[length] = {(unsigned char)power};
+  uint8_t length = 1;
+  uint8_t buffer[length] = {(uint8_t)power};
   
   status = pC_->writeReadFrame(length, SERVO_ENABLE, buffer);
 
   return status;
 }
 
-asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, double maxVelocity, double acceleraton){
+asynStatus EzS2PEAxis::move(double position, int32_t relative, double minVelocity, double maxVelocity, double acceleraton){
   // Move to absolute position (RVAL) or relative position (TWF/TWR)
 
   asynStatus status;
-  unsigned char length = 8;
-  unsigned char buffer[length]; //placeholder for outstring
+  uint8_t length = 8;
+  uint8_t buffer[length]; //placeholder for outstring
   
-  int pos = NINT(position);
-  int vel = NINT(fabs(maxVelocity));
+  int32_t pos = NINT(position);
+  int32_t vel = NINT(fabs(maxVelocity));
 
   /* custom acceleration
-  int accel = NINT(fabs(maxVelocity/acceleration)/1000); //acceleration time in msec
+  int32_t accel = NINT(fabs(maxVelocity/acceleration)/1000); //acceleration time in msec
 
   if(accel!=0){
     setParameter(0x03, accel);
@@ -224,13 +224,13 @@ asynStatus EzS2PEAxis::move(double position, int relative, double minVelocity, d
   */
   
   // Build the outstring
-  unsigned char* ptr = buffer;
+  uint8_t* ptr = buffer;
 
-  memcpy(ptr, &pos, sizeof(int)); //position
-  ptr += sizeof(int);
+  memcpy(ptr, &pos, sizeof(int32_t)); //position
+  ptr += sizeof(int32_t);
 
-  memcpy(ptr, &vel, sizeof(int)); //speed
-  ptr += sizeof(int);
+  memcpy(ptr, &vel, sizeof(int32_t)); //speed
+  ptr += sizeof(int32_t);
 
   if(relative){
     status = pC_->writeReadFrame(length, TWEAK, buffer);
@@ -246,16 +246,16 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
 
   asynStatus status;
 
-  unsigned char length = 5;
-  unsigned char buffer[length];
+  uint8_t length = 5;
+  uint8_t buffer[length];
 
-  int vel = NINT(abs(maxVelocity));
+  int32_t vel = NINT(abs(maxVelocity));
 
   // Build the outstring
-  unsigned char* ptr = buffer;
+  uint8_t* ptr = buffer;
 
-  memcpy(ptr, &vel, sizeof(int)); //speed
-  ptr += sizeof(int);
+  memcpy(ptr, &vel, sizeof(int32_t)); //speed
+  ptr += sizeof(int32_t);
 
   if(maxVelocity > 0){ //direction
     *ptr = 1; //forward jog
@@ -273,9 +273,9 @@ asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double accel
   // Go to hardware home switch at speed HVEL defined in motor record
 
   asynStatus status;
-  unsigned char* buffer;
+  uint8_t* buffer;
 
-  int vel = NINT(fabs(maxVelocity));
+  int32_t vel = NINT(fabs(maxVelocity));
 
   setParameter(0x0e, vel);
   setParameter(0x0f, vel/5);
@@ -289,7 +289,7 @@ asynStatus EzS2PEAxis::stop(double acceleration){
   // Stop the motor
 
   asynStatus status;
-  unsigned char* buffer;
+  uint8_t* buffer;
   
   status = pC_->writeReadFrame(0, STOP, buffer);
   return status;
@@ -299,23 +299,23 @@ asynStatus EzS2PEAxis::poll(bool *moving){
 
   // Poll the motor
 
-  unsigned int flag; //motor returns 32 status flags packed into an int32
-  int bit; //to store a status flag bit
-  int position; //motor returns position as int32 in steps
+  uint32_t flag; //motor returns 32 status flags packed into an int32
+  int32_t bit; //to store a status flag bit
+  int32_t position; //motor returns position as int32 in steps
   asynStatus comStatus;
 
   // Do the poll - one command to the motor and then read everything from inString
-  unsigned char* outBuffer;
+  uint8_t* outBuffer;
   comStatus = pC_->writeReadFrame(0, POLL, outBuffer);
 
-  unsigned char buffer[256];
+  uint8_t buffer[256];
   memcpy(buffer, &pC_->inString_, 2+pC_->inString_[1]); //copy inString to buffer
 
-  memcpy(&position, buffer+22, sizeof(int)); //read position
+  memcpy(&position, buffer+22, sizeof(int32_t)); //read position
   setDoubleParam(pC_->motorPosition_, (double)position); //write position to motor record readback
   setDoubleParam(pC_->motorEncoderPosition_, (double)position);
 
-  memcpy(&flag, buffer+14, sizeof(int)); //read the status flag integer
+  memcpy(&flag, buffer+14, sizeof(int32_t)); //read the status flag integer
 
   bit = (flag >> 19)%2;
   setIntegerParam(pC_->motorStatusDone_, bit);

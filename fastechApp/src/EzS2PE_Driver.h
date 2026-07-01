@@ -1,3 +1,4 @@
+#include <cstdint>
 #include "asynMotorController.h"
 #include "asynMotorAxis.h"
 
@@ -31,7 +32,7 @@ public:
 private:
     EzS2PEController *pC_;  /**< Pointer to the asynMotorController to which this axis belongs.
                              *   Abbreviated because it is used very frequently */
-    asynStatus setParameter(unsigned char param, int value);
+    asynStatus setParameter(uint8_t param, int32_t value);
     asynStatus servoPower(bool power);
 
 friend class EzS2PEController;
@@ -47,8 +48,8 @@ public:
     asynStatus writeReadController(const char *output, char *input, size_t maxChars, size_t *nread, double timeout);
 
 private:
-    unsigned char syncCounter;
-    asynStatus writeReadFrame(unsigned char length, unsigned char frameType, unsigned char *payload);
+    uint8_t syncCounter;
+    asynStatus writeReadFrame(uint8_t length, uint8_t frameType, uint8_t *payload);
 
 friend class EzS2PEAxis;
 };

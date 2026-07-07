@@ -6,7 +6,9 @@ Rea Domitrović <redomitro@irb.hr> July 2026
 Introduction
 ------------
 
+This is a Model 3 (asynMotor) FASTech Ezi-Servo 2 Plus-E (EzS2PE) controller by implementing methods from the asynMotorController and asynMotorAxis classes. Communication is established over Ethernet via the UDP protocol for reduced overhead versus TCP.
 
+Overall communication is achieved using ASCII octets, but they are not ASCII-compatible strings; the EzS2PE controller takes binary data as input. For that reason, the asynMotorController::writeReadController method had to be overriden to make everything work as expected.
 
 Velocity and acceleration
 -------------------------

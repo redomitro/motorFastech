@@ -3,7 +3,7 @@ FILENAME... EzS2PE_Driver.cpp
 USAGE...    Motor driver support for the FASTech Ezi-Servo 2 Plus-E controller.
 
 Rea Domitrović
-Based on the ACR driver of Mark Rivers.
+Based on the MCB4B driver by Mark Rivers.
 
 Thanks to Mark Rivers and Torsten Bögershausen for debugging help.
 
@@ -249,7 +249,7 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
   uint8_t length = 5;
   uint8_t buffer[length];
 
-  int32_t vel = NINT(abs(maxVelocity));
+  int32_t vel = NINT(fabs(maxVelocity));
 
   // Build the outstring
   uint8_t* ptr = buffer;

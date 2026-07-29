@@ -26,6 +26,7 @@ Last modification: 2026-06-29
 #include "EzS2PE_Driver.h"
 
 #define NINT(f) (int)((f)>0 ? (f)+0.5 : (f)-0.5)
+#define NINT16(f) (int16_t)((f)>0 ? (f)+0.5 : (f)-0.5)
 
 EzS2PEController::EzS2PEController(const char *portName, const char *EzS2PEPortName, int numAxes, 
                                  double movingPollPeriod, double idlePollPeriod)
@@ -212,17 +213,10 @@ asynStatus EzS2PEAxis::move(double position, int32_t relative, double minVelocit
   uint8_t buffer[length]; //placeholder for outstring
   
   int32_t pos = NINT(position);
-  int32_t vel = NINT(fabs(maxVelocity));
+  int32_t vel = (maxVelocity != 0) ? NINT(fabs(maxVelocity)) : 50000;
 
-  /* custom acceleration
-  int32_t accel = NINT(fabs(maxVelocity/acceleration)/1000); //acceleration time in msec
+  // todo - custom accelerations
 
-  if(accel!=0){
-    setParameter(0x03, accel);
-    setParameter(0x04, accel); //set accelerations - 
-  }
-  */
-  
   // Build the outstring
   uint8_t* ptr = buffer;
 
@@ -249,7 +243,7 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
   uint8_t length = 5;
   uint8_t buffer[length];
 
-  int32_t vel = NINT(fabs(maxVelocity));
+  int32_t vel = (maxVelocity != 0) ? NINT(fabs(maxVelocity)) : 50000;
 
   // Build the outstring
   uint8_t* ptr = buffer;
@@ -275,11 +269,17 @@ asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double accel
   asynStatus status;
   uint8_t* buffer;
 
-  int32_t vel = NINT(fabs(maxVelocity));
+  int32_t vel = (maxVelocity != 0) ? NINT(fabs(maxVelocity)) : 50000;
 
   setParameter(0x0e, vel);
   setParameter(0x0f, vel/5);
-  
+
+  if(!forwards){
+    setParameter(0x12, 1);
+  } else {
+    setParameter(0x12, 0);
+  }
+
   status = pC_->writeReadFrame(0, ORIGIN, buffer);
   
   return status;

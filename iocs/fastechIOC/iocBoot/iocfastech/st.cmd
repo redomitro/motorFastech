@@ -23,11 +23,6 @@ dbLoadRecords("db/motor.db","SYS=EXIT, SUB=zpos, DESC=z-axis control, CONT=motor
 
 cd "${TOP}/iocBoot/${IOC}"
 
-asynSetTraceIOMask("L0", 0, 4)
-asynSetTraceMask("L0", 0, 0x12)
-asynSetTraceIOMask("motorExit", 0, 4)
-asynSetTraceMask("motorExit", 0, 0x12)
-
 iocInit
 
 ## Start any sequence programs

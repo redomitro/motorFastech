@@ -12,6 +12,7 @@ DIRS += $(wildcard *Sup)
 DIRS += $(wildcard *App)
 DIRS += $(wildcard *Top)
 DIRS += $(wildcard iocBoot)
+DIRS += iocs/fastechIOC
 
 # The build order is controlled by these dependency rules:
 
@@ -33,3 +34,4 @@ iocBoot_DEPEND_DIRS += $(filter %App,$(DIRS))
 # Add any additional dependency rules here:
 
 include $(TOP)/configure/RULES_TOP
+iocs_DEPEND_DIRS += $(filter %App, $(DIRS))

@@ -155,11 +155,7 @@ EzS2PEAxis::EzS2PEAxis(EzS2PEController *pC, int axisNo)
   : asynMotorAxis(pC, axisNo),
     pC_(pC)
 {
-  bool moving=false;
-  poll(&moving);
-  if(!pC_->motorStatusPowerOn_){
-    servoPower(true); //turn power on when axis is initialised
-  }
+  servoPower(true); //turn power on when axis is initialised
 }
 
 /** Reports on status of the axis

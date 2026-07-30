@@ -19,7 +19,7 @@ drvAsynIPPortConfigure("L0", "192.168.0.204:3001 UDP", 0, 0, 1)
 EzS2PECreateController("motorExit", "L0", 1, 10, 1000, 0)
 
 ## Load record instances
-dbLoadRecords("db/motor.db","SYS=EXIT, SUB=zpos, DESC=z-axis control, CONT=motorExit, AXIS=0, MRES=2e-4, TWV=2")
+dbLoadRecords("db/motor.db","SYS=EXIT, SUB=zpos, DESC=z-axis control, CONT=motorExit, VELO=5, ACCL=1, VBAS=0, AXIS=0, MRES=2e-4, TWV=2")
 
 cd "${TOP}/iocBoot/${IOC}"
 

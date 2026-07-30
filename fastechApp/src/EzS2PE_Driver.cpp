@@ -135,7 +135,7 @@ asynStatus EzS2PEController::writeReadFrame(uint8_t length, uint8_t frameType, u
   uint8_t boiler[]={HEADER, 3+length, syncCounter, 0x00, frameType};
   memcpy(outString_, boiler, sizeof(boiler));
   if(length){
-    memcpy(outString_+HEAD_LENGTH, payload, sizeof(payload));
+    memcpy(outString_+HEAD_LENGTH, payload, length);
   }
 
   status = writeReadController(outString_, inString_, sizeof(inString_), &nread, DEFAULT_CONTROLLER_TIMEOUT);
@@ -205,17 +205,21 @@ asynStatus EzS2PEAxis::servoPower(bool power){
   return status;
 }
 
-asynStatus EzS2PEAxis::move(double position, int32_t relative, double minVelocity, double maxVelocity, double acceleraton){
+asynStatus EzS2PEAxis::move(double position, int32_t relative, double minVelocity, double maxVelocity, double acceleration){
   // Move to absolute position (RVAL) or relative position (TWF/TWR)
 
   asynStatus status;
-  uint8_t length = 8;
-  uint8_t buffer[length]; //placeholder for outstring
+  uint8_t length = 40;
+  uint8_t buffer[length] = {0}; //placeholder for outstring
   
   int32_t pos = NINT(position);
   int32_t vel = (maxVelocity != 0) ? NINT(fabs(maxVelocity)) : 50000;
 
-  // todo - custom accelerations
+  //set custom acceleration time in msec; motor record reports in steps/sec^2
+  int16_t accel = (acceleration != 0) ? NINT16(fabs(1000*(maxVelocity-minVelocity)/acceleration)) : 0;
+
+  //set flag to use custom acceleration
+  int32_t flag = (accel != 0) ? 6 : 0;
 
   // Build the outstring
   uint8_t* ptr = buffer;
@@ -225,6 +229,15 @@ asynStatus EzS2PEAxis::move(double position, int32_t relative, double minVelocit
 
   memcpy(ptr, &vel, sizeof(int32_t)); //speed
   ptr += sizeof(int32_t);
+
+  memcpy(ptr, &flag, sizeof(int32_t)); //flag
+  ptr += sizeof(int32_t);
+
+  memcpy(ptr, &accel, sizeof(int16_t)); //accel
+  ptr += sizeof(int16_t);
+
+  memcpy(ptr, &accel, sizeof(int16_t)); //decel
+  ptr += sizeof(int16_t);
 
   if(relative){
     status = pC_->writeReadFrame(length, TWEAK, buffer);
@@ -240,10 +253,13 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
 
   asynStatus status;
 
-  uint8_t length = 5;
+  uint8_t length = 37;
   uint8_t buffer[length];
 
   int32_t vel = (maxVelocity != 0) ? NINT(fabs(maxVelocity)) : 50000;
+
+  int16_t accel = (acceleration != 0) ? NINT16(fabs(1000*(maxVelocity-minVelocity)/acceleration)) : 0;
+  int32_t flag = (accel != 0) ? 2 : 0;
 
   // Build the outstring
   uint8_t* ptr = buffer;
@@ -258,6 +274,12 @@ asynStatus EzS2PEAxis::moveVelocity(double minVelocity, double maxVelocity, doub
   }
   ptr++;
 
+  memcpy(ptr, &flag, sizeof(int32_t)); //flag
+  ptr += sizeof(int32_t);
+
+  memcpy(ptr, &accel, sizeof(int16_t)); //accel
+  ptr += sizeof(int16_t);
+
   status = pC_->writeReadFrame(length, JOG, buffer);
   
   return status;
@@ -270,9 +292,14 @@ asynStatus EzS2PEAxis::home(double minVelocity, double maxVelocity, double accel
   uint8_t* buffer;
 
   int32_t vel = (maxVelocity != 0) ? NINT(fabs(maxVelocity)) : 50000;
+  int16_t accel = (acceleration != 0) ? NINT16(fabs(1000*(maxVelocity-minVelocity)/acceleration)) : 0;
 
   setParameter(0x0e, vel);
   setParameter(0x0f, vel/5);
+
+  if(accel != 0){
+    setParameter(0x10, (int32_t)accel);
+  }
 
   if(!forwards){
     setParameter(0x12, 1);

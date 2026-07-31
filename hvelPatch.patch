@@ -1,0 +1,25 @@
+From 78f03d2057a9b2243c66aedb9c07d8d583bafb74 Mon Sep 17 00:00:00 2001
+From: redomitro <rea.domitrovic@irb.hr>
+Date: Thu, 30 Jul 2026 15:19:54 +0200
+Subject: [PATCH] Changed HVEL=0 case to default to VELO instead of VBAS
+
+---
+ motorApp/MotorSrc/motorRecord.cc | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/motorApp/MotorSrc/motorRecord.cc b/motorApp/MotorSrc/motorRecord.cc
+index d9800609..b3882a4c 100644
+--- a/motorApp/MotorSrc/motorRecord.cc
++++ b/motorApp/MotorSrc/motorRecord.cc
+@@ -4062,7 +4062,7 @@ static void check_speed_and_resolution(motorRecord * pmr)
+ 
+     /* Sanity check on home velocity. */
+     if (pmr->hvel == 0.0)
+-        pmr->hvel = pmr->vbas;
++        pmr->hvel = pmr->velo;
+     else
+         range_check(pmr, &pmr->hvel, pmr->vbas, pmr->vmax);
+ }
+-- 
+2.47.3
+

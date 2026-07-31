@@ -6,29 +6,54 @@ Rea Domitrović <redomitro@irb.hr> July 2026
 Introduction
 ------------
 
-This is a Model 3 (asynMotor) FASTech Ezi-Servo 2 Plus-E (EzS2PE) controller by implementing methods from the asynMotorController and asynMotorAxis classes. Communication is established over Ethernet via the UDP protocol for reduced overhead versus TCP.
+This is a Model 3 (asynMotor) FASTech Ezi-Servo 2 Plus-E (EzS2PE) controller by implementing methods 
+from the asynMotorController and asynMotorAxis classes. Communication is established over Ethernet via 
+the UDP protocol for reduced overhead versus TCP.
 
-Overall communication is achieved using octets, but they are not ASCII-compatible strings; the EzS2PE controller takes binary data as input. For that reason, the asynMotorController::writeReadController method had to be overriden to make everything work as expected.
+Overall communication is achieved using octets, but they are not ASCII-compatible strings; the EzS2PE 
+controller takes binary data as input. For that reason, the asynMotorController::writeReadController 
+method had to be overriden to make everything work as expected.
 
 Velocity and acceleration
 -------------------------
 
-Leaving VELO/HVEL/JVEL fields at 0 will cause the motor to move at 50000 steps per second. The actual speed in rpm will depend on the type of motor you have.
+Leaving VELO/JVEL fields at 0 will cause the motor to move at 50000 steps per second. The actual 
+speed in rpm will depend on the type of motor you have.
 
-Custom acceleration is currently not implemented, so move, tweak and jog motions will happen with an acceleration time of 0.1 seconds and homing motion with acceleration of 0.05 seconds. (Controller defaults)
+If using motor version 7-4 or earlier, or master before 2026-07-30: If HVEL is left as 0, the motor 
+record defaults to setting HVEL=VBAS. To instead make HVEL mirror VBAS, apply the provided patch file 
+(hvelPatch.patch) in your motor module top directory.
+
+If acceleration is left unset, the record will drive the device with accelerations of 0.1 seconds for 
+all movements. If ACCL is set, jog acceleration will mirror move/tweak acceleration on IOC startup, but 
+not if ACCL/ACCS is set via channel access. This can cause jog and move accelerations to become 
+desynced.
 
 IOC setup
 ---------
 
-Ezi-Servo 2 Plus-E uses TCP on port 2001 or UDP on port 3001 to communicate. To set up the motor in the IOC, the following lines need to be added to your st.cmd:
+Ezi-Servo 2 Plus-E uses TCP on port 2001 or UDP on port 3001 to communicate. To set up the motor in the 
+IOC using UDP, the following lines need to be added to your st.cmd:
 
 drvAsynIPPortConfigure(<portName>, "<ipAddress>:3001 UDP", 0, 0, 1)
 EzS2PECreateController(<motorName>, <portName>, 1, <movingPollPeriod>, <idlePollPeriod>, 0)
 
-In drvAsynIPPortConfigure, it is important that the last argument (noProcessEos) be set to 1. The controller doesn't use a standard message terminator (EOS) and instead hardcodes the length of a message, so it is necessary to disable EOS processing. The UDP argument can be left out if you want to use TCP, but in that case set the port to 2001 instead.
+The poll communication has quite a bit of overhead - the motor returns 38 bytes - so reducing the poll 
+rate to avoid eating too much bandwidth can be considered.
+
+In drvAsynIPPortConfigure, it is important that the last argument (noProcessEos) be set to 1. The 
+controller doesn't use a standard message terminator (EOS) and instead hardcodes the length of a 
+message, so it is necessary to disable EOS processing. The UDP argument can be left out if you want to 
+use TCP, but in that case set the port to 2001 instead.
 
 Restrictions
 -----------
 
-- This driver does not support all features of the Ezi-Servo controller, many of which are outside the motor record anyway.
-- To my knowledge, the controller can only independently control one axis - there is nothing in the communication spec that allows for axis addressing. If multiple axes are connected, they will all perform the same commands.
+This driver does not support all features of the Ezi-Servo controller, many of which are outside the 
+motor record anyway.
+
+To my knowledge, the controller can only independently control one axis; there is nothing in the 
+communication spec that allows for axis addressing. If multiple axes are connected, they will all 
+perform the same commands.
+
+Currently autosave functionality is not implemented.

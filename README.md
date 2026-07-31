@@ -1,7 +1,13 @@
 # motorFastech
 
-EPICS motor drivers for the following [FASTech](https://fastech-motions.com/) controllers: Ezi-Servo 2 Plus-E.
+EPICS motor drivers for the following [FASTech](https://fastech-motions.com/) controllers: Ezi-Servo 2 
+Plus-E.
 
-motorFastech is designed as a submodule of [motor](https://github.com/epics-modules/motor). When motorFastech is built inside the ``motor/modules`` directory, no manual configuration should be needed.
+motorFastech is designed as a submodule of [motor](https://github.com/epics-modules/motor). When 
+motorFastech is built inside the ``motor/modules`` directory, no manual configuration should be needed.
 
-motorFastech can also be built outside motor by copying the ``EXAMPLE_RELEASE.local`` file to ``RELEASE.local`` and defining the paths to dependency packages.
+motorFastech can also be built outside motor by copying the ``EXAMPLE_RELEASE.local`` file to 
+``RELEASE.local`` and defining the paths to dependency packages.
+
+A patch file is provided for motor versions 7-4 and earlier to make HVEL=0 mirror VELO instead of VBAS. 
+To apply, run `git patch apply (pathToPatchFile)` in your motor module top directory.

@@ -10,4 +10,4 @@ motorFastech can also be built outside motor by copying the ``EXAMPLE_RELEASE.lo
 ``RELEASE.local`` and defining the paths to dependency packages.
 
 A patch file is provided for motor versions 7-4 and earlier to make HVEL=0 mirror VELO instead of VBAS. 
-To apply, run `git patch apply (pathToPatchFile)` in your motor module top directory.
+To apply, run `git apply (pathToPatchFile)` in your motor module top directory.
